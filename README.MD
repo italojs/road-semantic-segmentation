@@ -3,47 +3,42 @@ Semantic Segmentation - It label the pixels of a road in images using a Fully Co
 
 # Index
 
-- [semantic segmentation overview](#semantic-segmentation-overview?)
 - [Neural network archtecture](#Neural-network-archtecture)
-- [Install requirements](#Install-requirements)
-- [Usage](#Usage)
-- [Example](E#xample)
-- [Folder structure example](#Folder-structure-example)
-- [Results](#Results)
-    - [Original Image](#Original-Image)
-    - [Resized image](#Resized-image)
-    - [Boundies box image](#Boundies-box-image)
-- [Parameters](#Parameters)
-
-## Semantic segmentation overview?
+- [Some results](#Some-results)
+- [Setup](#Setup)
+    - [Frameworks and Packages](#Frameworks-and-Packages)
+    - [Dataset](#Dataset)
+- [Start](#Start)
+    - [Usage](#Usage)
+    - [google colabotory - GPU 4free](#Running-at-google-colabotory---GPU-4free)
 
 ## Neural network archtecture
-The project start loading a vgg model so implements an FCN -  Fully Convolutional Network 
+The project start loading a vgg model so implements an FCN - Fully Convolutional Network 
 
-!['./images/vgg-FCN.png']('./images/vgg-FCN.png')
+!['./images/vgg-FCN.png'](./images/vgg-FCN.png)
 
 More details about how VGG16 is used in this archtechture to converte it to a fully convolutional network, you can read ['this paper']('https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf').
 
 ## Some results
- ![]('./images/umm_000019')
+ ![](./images/1.png)
 
- ![]('./images/umm_000076')
+ ![](./images/2.png)
 
- ![]('./images/uu_000037')
+ ![](./images/3.png)
 
 
-### Setup
-##### Frameworks and Packages
+## Setup
+#### Frameworks and Packages
 Make sure you have the following is installed:
  - [Python 3](https://www.python.org/)
  - [TensorFlow](https://www.tensorflow.org/)
  - [NumPy](http://www.numpy.org/)
  - [SciPy](https://www.scipy.org/)
 
-##### Dataset
+#### Dataset
 The project will download the [Kitti Road dataset](http://www.cvlibs.net/datasets/kitti/eval_road.php) dataset from [here](http://www.cvlibs.net/download.php?file=data_road.zip). It will extract the files in `data` folder.  This will create the folder `data_road` with all the training a test images.
 
-### Start
+## Start
 
 #### Usage
 Run the following command to run the project:
@@ -84,5 +79,5 @@ Options:
                         Default=False
 ```
 
-### Running at google colabotory - GPU 4free
-Open this [link]('https://colab.research.google.com/drive/1bwYKqgZIKlMRuTqD0HdU3DeHJzH9xwe4')
+#### Running at google colabotory - GPU 4free
+Open this [link](https://colab.research.google.com/drive/1bwYKqgZIKlMRuTqD0HdU3DeHJzH9xwe4)
