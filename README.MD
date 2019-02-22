@@ -1,4 +1,4 @@
-# Semantic Segmentation Fully Convolutional Neural Network for Udacity Self-driving Car Engineer Nanodegree
+# Semantic Segmentation Fully Convolutional Neural Network
 Semantic Segmentation - It label the pixels of a road in images using a Fully Convolutional Network (FCN).
 
 # Index
