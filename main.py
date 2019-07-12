@@ -196,7 +196,7 @@ def run():
     runs_dir = './runs'
 
     print("\n\nTesting for kitti datatset presence......")
-    tests.test_for_kitti_dataset(data_dir)
+    tests.test_looking_for_dataset(data_dir)
 
     # Download pretrained vgg model
     helper.maybe_download_pretrained_vgg(vgg_dir)
@@ -225,9 +225,17 @@ def run():
         layer_output = layers(layer3_out, layer4_out, layer7_out, num_classes)
         logits, train_op, cross_entropy_loss = optimize(layer_output, correct_label, learning_rate, num_classes)
 
+        # Add ops to save and restore all the variables.
+        saver = tf.train.Saver()
+
         sess.run(tf.global_variables_initializer())
         train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image,
                  correct_label, keep_prob, learning_rate)
+
+        pathSaveModel = join(dirname(os.path.abspath(__file__)), \
+                                        "tensorSaved", "model.ckpt")
+        pathSaveModel = saver.save(sess, pathSaveModel)
+        print("Model saved in path: {}".format(save_path))
 
         helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
 

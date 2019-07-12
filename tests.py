@@ -141,13 +141,13 @@ def test_train_nn(train_nn):
 
 
 @test_safe
-def test_for_kitti_dataset(data_dir):
-  training_labels_count = len(glob(os.path.join(data_dir, 'training/gt_image_2/*_road_*.png')))
+def test_looking_for_dataset(data_dir):
+  training_labels_count = len(glob(os.path.join(data_dir, 'training/gt_image_2/*.png')))
   training_images_count = len(glob(os.path.join(data_dir, 'training/image_2/*.png')))
   testing_images_count = len(glob(os.path.join(data_dir, 'testing/image_2/*.png')))
 
   assert not (training_images_count == training_labels_count == testing_images_count == 0),\
-      'Kitti dataset not found. Extract Kitti dataset in {}'.format(data_dir)
-  assert training_images_count == 289, 'Expected 289 training images, found {} images.'.format(training_images_count)
-  assert training_labels_count == 289, 'Expected 289 training labels, found {} labels.'.format(training_labels_count)
-  assert testing_images_count == 290, 'Expected 290 testing images, found {} images.'.format(testing_images_count)
+      'Any dataset not found. Extract one (Eg: Kitti) dataset in {}'.format(data_dir)
+  assert training_images_count > 0, 'Expected training images, found 0 images.'
+  assert training_labels_count > 0, 'Expected training labels, found 0 labels.'
+  assert testing_images_count > 0, 'Expected testing images, found 0 images.'

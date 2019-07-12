@@ -89,14 +89,7 @@ def get_args():
      is None else './data/data_road/training/image_2/*.png'
     glob_labels_trainig_image_path = options.glob_labels_trainig_image_path if options.glob_labels_trainig_image_path \
      is None else './data/data_road/training/gt_image_2/*_road_*.png'
-     
-    # if not options.num_classes:
-    #   raise  Exception('-n/--num_classes is required')
-    # if not options.glob_trainig_images_path:
-    #   raise  Exception('-i/--glob_trainig_images_path is required')
-    # if not options.glob_labels_trainig_image_path:
-    #   raise  Exception('-l/--glob_labels_trainig_image_path is required')
-
+  
     return (int(options.num_classes),
       epochs, 
       batch_size, 
@@ -125,8 +118,9 @@ def gen_batch_function(glob_trainig_images_path, glob_labels_trainig_image_path,
     image_paths = glob(glob_trainig_images_path)
     # TODO: verify a generic way to construct this batch dataset
     label_paths = {
-        re.sub(r'_(lane|road)_', '_', os.path.basename(path)): path
+        re.sub(r'_(lane|road)_', '_', os.path.basename(path)): path 
         for path in glob(glob_labels_trainig_image_path)}
+    
     background_color = np.array([255, 0, 0])
     random.shuffle(image_paths)
     for batch_i in range(0, len(image_paths), batch_size):
@@ -137,6 +131,10 @@ def gen_batch_function(glob_trainig_images_path, glob_labels_trainig_image_path,
 
         image = scipy.misc.imresize(scipy.misc.imread(image_file), image_shape)
         gt_image = scipy.misc.imresize(scipy.misc.imread(gt_image_file), image_shape)
+
+        ############gt_image is a jpg file with extension .png############
+        if gt_image[0].shape[1] != 3:
+          raise ValueError("GT IMAGE MUST CONTAIN 3 CHANNELS (JPG FILE)")
 
         gt_bg = np.all(gt_image == background_color, axis=2)
         gt_bg = gt_bg.reshape(*gt_bg.shape, 1)

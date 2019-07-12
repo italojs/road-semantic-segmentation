@@ -106,3 +106,5 @@ data/data_road
 data/vgg
 .DS_Store
 .idea
+
+env-RoadSeg
