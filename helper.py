@@ -7,6 +7,8 @@ import os.path
 import scipy.misc
 import numpy as np
 import tensorflow as tf
+import time
+import subprocess
 
 from glob import glob
 from tqdm import tqdm
@@ -74,7 +76,8 @@ def get_args():
     parser.add_option("-p", "--log_path", dest="log_path", help="Path to save the tensorflow logs to TensorBoard | Default='.'")
     parser.add_option("-v", "--vgg_dir", dest="vgg_dir", help="Path to dowloand vgg pre trained weigths. | Default='./data/vgg'")
     parser.add_option("-g", "--graph_visualize", dest="graph_visualize", help="create a graph image of the FCN archtecture. | Default=False")
-    
+    parser.add_option("-R", "--restore_model", dest="restore_model", help="Restore a model locate in model folder. | Default=False")
+
     (options, args) = parser.parse_args()
 
     log_path = options.log_path if options.log_path is None else '.'
@@ -84,13 +87,15 @@ def get_args():
     learn_rate = float(options.learn_rate) if options.learn_rate is not None else 9e-5
     data_path = options.data_path if options.data_path is not None else './data/data_road'
     graph_visualize = options.graph_visualize if options.graph_visualize is not None else False
-    num_classes = options.num_classes if options.num_classes is None else 2
+    num_classes = options.num_classes if options.num_classes is not None else 2
     glob_trainig_images_path = options.glob_trainig_images_path if options.glob_trainig_images_path \
      is None else './data/data_road/training/image_2/*.png'
     glob_labels_trainig_image_path = options.glob_labels_trainig_image_path if options.glob_labels_trainig_image_path \
      is None else './data/data_road/training/gt_image_2/*_road_*.png'
-  
-    return (int(options.num_classes),
+    restore_model = options.restore_model if options.restore_model is not None else False
+
+    return (restore_model,
+      int(num_classes),
       epochs, 
       batch_size, 
       vgg_dir, 
@@ -159,6 +164,8 @@ def gen_test_output(sess, logits, keep_prob, image_pl, data_folder, image_shape)
   :return: Output for for each test image
   """
   for image_file in glob(os.path.join(data_folder, 'image_2', '*.png')):
+    start = time.clock()
+    
     image = scipy.misc.imresize(scipy.misc.imread(image_file), image_shape)
 
     im_softmax = sess.run(
@@ -171,8 +178,23 @@ def gen_test_output(sess, logits, keep_prob, image_pl, data_folder, image_shape)
     street_im = scipy.misc.toimage(image)
     street_im.paste(mask, box=None, mask=mask)
 
+    timeCount = (time.time() - start)
+    print (image_file + " process time: " + str(timeCount))
+    subprocess.call("echo {} - {} >> ./data/data_road/time.txt".format(image_file, timeCount), shell=True)
+    
     yield os.path.basename(image_file), np.array(street_im)
 
+def predict(data_dir, sess, image_shape, logits, keep_prob, input_image):
+    # Run NN on test images and save them to HD
+    print('Predicting images...')
+    # start epoch training timer
+
+    image_outputs = gen_test_output(
+        sess, logits, keep_prob, input_image, data_dir, image_shape)
+
+    counter = 0
+    for name, image in image_outputs:
+        misc.pilutil.imshow(image)
 
 def save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image):
   # Make folder for current run
