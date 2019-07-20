@@ -294,7 +294,8 @@ def all_is_ok():
     tests.test_train_nn(train_nn)
 
 def predict_video():
-    model_path ='./model/model.ckpt'
+    if path_video is False:
+        exit("Path video not set, pass the properly argument")
 
     """
     :param nn_last_layer: TF Tensor of the last layer in the neural network
@@ -312,14 +313,14 @@ def predict_video():
 
         # Restore the saved model
         saver = tf.train.Saver()
-        saver.restore(sess, model_path)
-        print("Restored the saved Model in file: %s" % model_path)
+        saver.restore(sess, path_model)
     
         # Predict the samples
-        helper.predict(test_data_path, sess, image_shape, logits, keep_prob, input_image)
+        helper.predict_video(path_video, sess, image_shape, logits, keep_prob, input_image)
 
 if __name__ == '__main__':
-    (restore_model,
+    (path_model,
+     path_video,
      num_classes,
      epochs,
      batch_size, 
@@ -331,7 +332,7 @@ if __name__ == '__main__':
      glob_trainig_images_path,
      glob_labels_trainig_image_path) = helper.get_args()
 
-    if not restore_model:
+    if not path_model:
         all_is_ok()
         run()
     else:

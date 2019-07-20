@@ -15,6 +15,8 @@ from tqdm import tqdm
 from optparse import OptionParser
 from urllib.request import urlretrieve
 
+from VideoGet import VideoGet
+from VideoShow import VideoShow
 
 class DLProgress(tqdm):
   last_block = 0
@@ -76,7 +78,8 @@ def get_args():
     parser.add_option("-p", "--log_path", dest="log_path", help="Path to save the tensorflow logs to TensorBoard | Default='.'")
     parser.add_option("-v", "--vgg_dir", dest="vgg_dir", help="Path to dowloand vgg pre trained weigths. | Default='./data/vgg'")
     parser.add_option("-g", "--graph_visualize", dest="graph_visualize", help="create a graph image of the FCN archtecture. | Default=False")
-    parser.add_option("-R", "--restore_model", dest="restore_model", help="Restore a model locate in model folder. | Default=False")
+    parser.add_option("-m", "--path_model", dest="path_model", help="Load a model, to predict a video. | Default=False")
+    parser.add_option("-V", "--path_video", dest="path_video", help="Path to predict video. | Default= \'\'")
 
     (options, args) = parser.parse_args()
 
@@ -92,9 +95,11 @@ def get_args():
      is None else './data/data_road/training/image_2/*.png'
     glob_labels_trainig_image_path = options.glob_labels_trainig_image_path if options.glob_labels_trainig_image_path \
      is None else './data/data_road/training/gt_image_2/*_road_*.png'
-    restore_model = options.restore_model if options.restore_model is not None else False
+    path_model = options.path_model if options.path_model is not None else False
+    path_video = options.path_video if options.path_video is not None else False
 
-    return (restore_model,
+    return (path_model,
+      path_video,
       int(num_classes),
       epochs, 
       batch_size, 
@@ -168,15 +173,7 @@ def gen_test_output(sess, logits, keep_prob, image_pl, data_folder, image_shape)
     
     image = scipy.misc.imresize(scipy.misc.imread(image_file), image_shape)
 
-    im_softmax = sess.run(
-        [tf.nn.softmax(logits)],
-        {keep_prob: 1.0, image_pl: [image]})
-    im_softmax = im_softmax[0][:, 1].reshape(image_shape[0], image_shape[1])
-    segmentation = (im_softmax > 0.5).reshape(image_shape[0], image_shape[1], 1)
-    mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
-    mask = scipy.misc.toimage(mask, mode="RGBA")
-    street_im = scipy.misc.toimage(image)
-    street_im.paste(mask, box=None, mask=mask)
+    street_im = predict(sess, image, image_pl, keep_prob, logits, image_shape)
 
     timeCount = (time.time() - start)
     print (image_file + " process time: " + str(timeCount))
@@ -184,18 +181,35 @@ def gen_test_output(sess, logits, keep_prob, image_pl, data_folder, image_shape)
     
     yield os.path.basename(image_file), np.array(street_im)
 
-def predict(data_dir, sess, image_shape, logits, keep_prob, input_image):
-    # Run NN on test images and save them to HD
-    print('Predicting images...')
-    # start epoch training timer
+def predict(sess, image, image_pl, keep_prob, logits, image_shape):
+    im_softmax = sess.run(
+        [tf.nn.softmax(logits)],
+        {keep_prob: 1.0, image_pl: [image]})
+    
+    im_softmax = im_softmax[0][:, 1].reshape(image_shape[0], image_shape[1])
+    segmentation = (im_softmax > 0.5).reshape(image_shape[0], image_shape[1], 1)
+    mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
+    mask = scipy.misc.toimage(mask, mode="RGBA")
+    street_im = scipy.misc.toimage(image)
+    street_im.paste(mask, box=None, mask=mask)
+    
+    return street_im
 
-    image_outputs = gen_test_output(
-        sess, logits, keep_prob, input_image, data_dir, image_shape)
+def predict_video(data_dir, sess, image_shape, logits, keep_prob, input_image):
+    print('Predicting Video...')
+    
+    video_getter = VideoGet(data_dir, sess, image_shape, logits, keep_prob, input_image).start()
+    video_shower = VideoShow(video_getter.frame).start()
 
-    counter = 0
-    for name, image in image_outputs:
-        misc.pilutil.imshow(image)
+    while True:
+        if video_getter.stopped or video_shower.stopped:
+            video_shower.stop()
+            video_getter.stop()
+            break
 
+        frame = video_getter.frame
+        video_shower.frame = frame
+        
 def save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image):
   # Make folder for current run
   output_dir = os.path.join(runs_dir, str(int(time.time())))
