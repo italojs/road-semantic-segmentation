@@ -10,6 +10,7 @@ from distutils.version import LooseVersion
 from tensorflow.python.platform import gfile
 from tensorflow.core.protobuf import saved_model_pb2
 
+image_shape = (160, 576)
 
 def load_vgg(sess, vgg_path):
     """
@@ -113,6 +114,9 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
 
     return output
 
+def get_logits(last_layer, num_classes):
+    return tf.reshape(last_layer, (-1, num_classes))
+
 def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     """
     Build the TensorFLow loss and optimizer operations.
@@ -125,7 +129,7 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     # TODO: Implement function KK-DONE
 
     # KK Get the logits of the network
-    logits = tf.reshape(nn_last_layer, (-1, num_classes))
+    logits = get_logits(nn_last_layer, (-1, num_classes))
 
     # KK Get the loss of the network
     cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=correct_label))
@@ -192,11 +196,10 @@ def graph_visualize():
     train_writer.add_graph(sess.graph)
 
 def run():
-    image_shape = (160, 576)
     runs_dir = './runs'
 
-    print("\n\nTesting for kitti datatset presence......")
-    tests.test_for_kitti_dataset(data_dir)
+    print("\n\nTesting for datatset presence......")
+    tests.test_looking_for_dataset(data_dir)
 
     # Download pretrained vgg model
     helper.maybe_download_pretrained_vgg(vgg_dir)
@@ -220,15 +223,48 @@ def run():
         # TF placeholders
         correct_label = tf.placeholder(tf.int32, [None, None, None, num_classes], name='correct_label')
         learning_rate = tf.placeholder(tf.float32, name='learning_rate')
-
+        
         input_image, keep_prob, layer3_out, layer4_out, layer7_out = load_vgg(sess, vgg_dir)
         layer_output = layers(layer3_out, layer4_out, layer7_out, num_classes)
         logits, train_op, cross_entropy_loss = optimize(layer_output, correct_label, learning_rate, num_classes)
 
-        sess.run(tf.global_variables_initializer())
+        # tfImShape = tf.get_variable("image_shape")
+        # tfLogits = tf.get_variable("logits")
+        # tfKeepProb = tf.get_variable("keep_prob") TEM NO TF
+
+        print(100*'*')
+        print(image_shape)
+        #(160, 576)
+        print(100*'*')
+        print(logits)
+        #Tensor("Reshape:0", shape=(?, 2), dtype=float32)
+        print(100*'*')
+        print(keep_prob)
+        #Tensor("keep_prob:0", dtype=float32)
+        print(100*'*')
+        print(input_image)
+        #Tensor("image_input:0", shape=(?, ?, ?, 3), dtype=float32)
+        print(100*'*')
+
+        init_op = tf.global_variables_initializer()
+
+        sess.run(init_op)
         train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image,
                  correct_label, keep_prob, learning_rate)
 
+
+        folderToSaveModel = "model"
+
+        # Add ops to save and restore all the variables.
+        saver = tf.train.Saver()
+        
+        for i, var in enumerate(saver._var_list):
+            print('Var {}: {}'.format(i, var))
+
+        pathSaveModel = os.path.join(folderToSaveModel, "model.ckpt")
+        pathSaveModel = saver.save(sess, pathSaveModel)
+        print("Model saved in path: {}".format(pathSaveModel))
+        
         helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
 
         # OPTIONAL: Apply the trained model to a video
@@ -257,9 +293,35 @@ def all_is_ok():
     print("\n\nTesting train_nn function......")
     tests.test_train_nn(train_nn)
 
+def predict_video():
+    if path_video is False:
+        exit("Path video not set, pass the properly argument")
+
+    """
+    :param nn_last_layer: TF Tensor of the last layer in the neural network
+    :param num_classes: Number of classes to classify
+    """
+
+    # Path to vgg model
+    vgg_path = os.path.join('./data', 'vgg')
+
+    with tf.Session() as sess:
+        # Predict the logits
+        input_image, keep_prob, vgg_layer3_out, vgg_layer4_out, vgg_layer7_out = load_vgg(sess, vgg_path)
+        nn_last_layer = layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes)
+        logits = get_logits(nn_last_layer, num_classes)
+
+        # Restore the saved model
+        saver = tf.train.Saver()
+        saver.restore(sess, path_model)
+    
+        # Predict the samples
+        helper.predict_video(path_video, sess, image_shape, logits, keep_prob, input_image)
 
 if __name__ == '__main__':
-    (num_classes,
+    (path_model,
+     path_video,
+     num_classes,
      epochs,
      batch_size, 
      vgg_dir, 
@@ -270,8 +332,12 @@ if __name__ == '__main__':
      glob_trainig_images_path,
      glob_labels_trainig_image_path) = helper.get_args()
 
-    all_is_ok()
-    run()
+    if not path_model:
+        all_is_ok()
+        run()
+    else:
+        predict_video()
+
     if graph_visualize:
         print("\n\nConverting .pb file to TF Summary and Saving Visualization of VGG16 graph..............")
         graph_visualize()
