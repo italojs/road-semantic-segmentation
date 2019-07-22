@@ -3,6 +3,7 @@ import os
 import warnings
 import tensorflow as tf
 import tests as tests
+import scipy.misc
 
 import progressbar
 from tensorflow.python.util import compat
@@ -296,15 +297,20 @@ def all_is_ok():
     print("\n\nTesting train_nn function......")
     tests.test_train_nn(train_nn)
 
-def predict_video():
-    if path_video is False:
+def predict_by_model():
+    if path_data is False:
         exit("Path video not set, pass the properly argument")
 
     """
     :param nn_last_layer: TF Tensor of the last layer in the neural network
     :param num_classes: Number of classes to classify
+    :param input_image: TF Placeholder for input images
+    :param keep_prob: TF Placeholder for dropout keep probability
+    :param vgg_layer7_out: TF Tensor for VGG Layer 3 output
+    :param vgg_layer4_out: TF Tensor for VGG Layer 4 output
+    :param vgg_layer3_out: TF Tensor for VGG Layer 7 output
     """
-
+    
     # Path to vgg model
     vgg_path = os.path.join('./data', 'vgg')
 
@@ -317,13 +323,25 @@ def predict_video():
         # Restore the saved model
         saver = tf.train.Saver()
         saver.restore(sess, path_model)
-    
-        # Predict the samples
-        helper.predict_video(path_video, sess, image_shape, logits, keep_prob, input_image)
+        
+        if pred_video == 'True':
+            # Predict a video
+            helper.predict_video(path_data, sess, image_shape, logits, keep_prob, input_image)
+        else:
+            # Predict a image
+            image = scipy.misc.imresize(scipy.misc.imread(path_data), image_shape)
+            street_im = helper.predict(sess, image, input_image, keep_prob, logits, image_shape)
+            
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            imagePath = os.path.join(current_dir, "image_predicted.png")
+            
+            scipy.misc.imsave(imagePath, street_im)
+            print("Image save in {}".format(imagePath))
 
 if __name__ == '__main__':
-    (path_model,
-     path_video,
+    (pred_video,
+     path_model,
+     path_data,
      num_classes,
      epochs,
      batch_size, 
@@ -339,7 +357,7 @@ if __name__ == '__main__':
         all_is_ok()
         run()
     else:
-        predict_video()
+        predict_by_model()
 
     if graph_visualize:
         print("\n\nConverting .pb file to TF Summary and Saving Visualization of VGG16 graph..............")
