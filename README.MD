@@ -77,6 +77,11 @@ Options:
   -g GRAPH_VISUALIZE, --graph_visualize=GRAPH_VISUALIZE
                         create a graph image of the FCN archtecture. |
                         Default=False
+  -m PATH_MODEL, --path_model
+                        Load a model, to predict a video. | 
+                        Default=False
+   -V PATH_VIDEO, --path_video", Path to predict video. | 
+                        Default= ''
 ```
 
 #### Running at google colabotory - GPU 4free
