@@ -1,5 +1,5 @@
 import helper
-import os.path
+import os
 import warnings
 import tensorflow as tf
 import tests as tests
@@ -129,7 +129,7 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     # TODO: Implement function KK-DONE
 
     # KK Get the logits of the network
-    logits = get_logits(nn_last_layer, (-1, num_classes))
+    logits = get_logits(nn_last_layer, num_classes)
 
     # KK Get the loss of the network
     cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=correct_label))
@@ -260,6 +260,9 @@ def run():
         
         for i, var in enumerate(saver._var_list):
             print('Var {}: {}'.format(i, var))
+
+        if not os.path.exists(folderToSaveModel):
+            os.makedirs(path)
 
         pathSaveModel = os.path.join(folderToSaveModel, "model.ckpt")
         pathSaveModel = saver.save(sess, pathSaveModel)

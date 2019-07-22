@@ -108,3 +108,5 @@ data/vgg
 .idea
 
 env-RoadSeg
+
+model/*

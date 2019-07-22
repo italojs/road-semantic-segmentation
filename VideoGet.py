@@ -31,10 +31,10 @@ class VideoGet:
             else:
                 (self.grabbed, frameLocal) = self.stream.read()
                 frameLocal = cv2.resize(frameLocal, (self.image_shape[1], self.image_shape[0]))
-                self.frame = np.array(helper.predict(self.sess, frameLocal, \ 
-                                                     self.input_image, \ 
-                                                     self.keep_prob, \ 
-                                                     self.logits, \ 
+                self.frame = np.array(helper.predict(self.sess, frameLocal,
+                                                     self.input_image,
+                                                     self.keep_prob,
+                                                     self.logits,
                                                      self.image_shape))
 
     def stop(self):
