@@ -17,6 +17,7 @@ from urllib.request import urlretrieve
 
 from VideoGet import VideoGet
 from VideoShow import VideoShow
+from VideoZed import VideoZed
 
 class DLProgress(tqdm):
   last_block = 0
@@ -67,19 +68,20 @@ def get_args():
 
     parser.add_option("-i", "--glob_trainig_images_path", dest="glob_trainig_images_path", 
       help="Path where is yours images to train the model. eg: ./data/data_road/training/image_2/*.png'")
-    # TODO: verify if the name of labels_images is really labels_images
     parser.add_option("-l", "--glob_labels_trainig_image_path", dest="glob_labels_trainig_image_path", 
       help="Path where is yours label images to train the model. eg: ./data/data_road/training/gt_image_2/*_road_*.png")
-    parser.add_option("-r", "--learn_rate", dest="learn_rate", help="The model learn rate | Default=9e-5")
-    parser.add_option("-n", "--num_classes", dest="num_classes", help="Number of classes in your dataset | Default value = 2")
-    parser.add_option("-e", "--epochs", dest="epochs", help="Number of epochs that FCN will train | Default=25")
-    parser.add_option("-b", "--batch_size", dest="batch_size", help="Number of batch size for each epoch. | Default=4")
-    parser.add_option("-t", "--data_path", dest="data_path", help="Training data path. | Default='data_road/training'")
-    parser.add_option("-p", "--log_path", dest="log_path", help="Path to save the tensorflow logs to TensorBoard | Default='.'")
-    parser.add_option("-v", "--vgg_dir", dest="vgg_dir", help="Path to dowloand vgg pre trained weigths. | Default='./data/vgg'")
+    parser.add_option("-r", "--learn_rate",   dest="learn_rate",  help="The model learn rate | Default=9e-5")
+    parser.add_option("-n", "--num_classes",  dest="num_classes", help="Number of classes in your dataset | Default value = 2")
+    parser.add_option("-e", "--epochs",       dest="epochs",      help="Number of epochs that FCN will train | Default=25")
+    parser.add_option("-b", "--batch_size",   dest="batch_size",  help="Number of batch size for each epoch. | Default=4")
+    parser.add_option("-t", "--data_path",    dest="data_path",   help="Training data path. | Default='data_road/training'")
+    parser.add_option("-p", "--log_path",     dest="log_path",    help="Path to save the tensorflow logs to TensorBoard | Default='.'")
+    parser.add_option("-v", "--vgg_dir",      dest="vgg_dir",     help="Path to dowloand vgg pre trained weigths. | Default='./data/vgg'")
     parser.add_option("-g", "--graph_visualize", dest="graph_visualize", help="create a graph image of the FCN archtecture. | Default=False")
-    parser.add_option("-m", "--path_model", dest="path_model", help="Load a model, to predict a video. | Default=False")
-    parser.add_option("-V", "--path_video", dest="path_video", help="Path to predict video. | Default= \'\'")
+    parser.add_option("-m", "--path_model",   dest="path_model",  help="Load a model, to predict a video. | Default=False")
+    parser.add_option("-V", "--path_data",    dest="path_data",   help="Path to predict a data. | Default= \'\'")
+    parser.add_option("",   "--pred_data_from",  dest="pred_data_from", help="Choose a type predict [video, image, zed] | Default=video")
+    parser.add_option("",   "--disable_gpu",  dest="disable_gpu", help="Disable predict by GPU | Default=False", action="store_true")
 
     (options, args) = parser.parse_args()
 
@@ -96,10 +98,14 @@ def get_args():
     glob_labels_trainig_image_path = options.glob_labels_trainig_image_path if options.glob_labels_trainig_image_path \
      is None else './data/data_road/training/gt_image_2/*_road_*.png'
     path_model = options.path_model if options.path_model is not None else False
-    path_video = options.path_video if options.path_video is not None else False
+    path_data = options.path_data if options.path_data is not None else False
+    pred_data_from = options.pred_data_from if options.pred_data_from is not None else "video"
+    disable_gpu = True if options.disable_gpu is not None else False
 
-    return (path_model,
-      path_video,
+    return (disable_gpu,
+      pred_data_from,
+      path_model,
+      path_data,
       int(num_classes),
       epochs, 
       batch_size, 
@@ -194,6 +200,28 @@ def predict(sess, image, image_pl, keep_prob, logits, image_shape):
     street_im.paste(mask, box=None, mask=mask)
     
     return street_im
+
+def read_zed(sess, image_shape, logits, keep_prob, input_image):
+    count = 0
+    video_zed = VideoZed(sess, image_shape, logits, keep_prob, input_image).start()
+
+    while type(video_zed.frame) == type(None):
+      if count == 3:
+        exit("Error to open ZED")
+      print("Waiting for zed")
+      count+=1
+      time.sleep(1)
+      
+    video_shower = VideoShow(video_zed.frame).start()
+
+    while True:
+        if video_zed.stopped or video_shower.stopped:
+            video_shower.stop()
+            video_zed.stop()
+            break
+
+        frame = video_zed.frame
+        video_shower.frame = frame
 
 def predict_video(data_dir, sess, image_shape, logits, keep_prob, input_image):
     print('Predicting Video...')
