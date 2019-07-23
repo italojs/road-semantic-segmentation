@@ -17,6 +17,7 @@ from urllib.request import urlretrieve
 
 from VideoGet import VideoGet
 from VideoShow import VideoShow
+from VideoZed import VideoZed
 
 class DLProgress(tqdm):
   last_block = 0
@@ -79,8 +80,9 @@ def get_args():
     parser.add_option("-v", "--vgg_dir", dest="vgg_dir", help="Path to dowloand vgg pre trained weigths. | Default='./data/vgg'")
     parser.add_option("-g", "--graph_visualize", dest="graph_visualize", help="create a graph image of the FCN archtecture. | Default=False")
     parser.add_option("-m", "--path_model", dest="path_model", help="Load a model, to predict a video. | Default=False")
-    parser.add_option("-V", "--path_video", dest="path_video", help="Path to predict video. | Default= \'\'")
-
+    parser.add_option("-V", "--path_data", dest="path_data", help="Path to predict a data. | Default= \'\'")
+    parser.add_option("","--pred_data_from", dest="pred_data_from", help="Choose a type predict [video, image, zed] | Default=video")
+    
     (options, args) = parser.parse_args()
 
     log_path = options.log_path if options.log_path is None else '.'
@@ -96,10 +98,12 @@ def get_args():
     glob_labels_trainig_image_path = options.glob_labels_trainig_image_path if options.glob_labels_trainig_image_path \
      is None else './data/data_road/training/gt_image_2/*_road_*.png'
     path_model = options.path_model if options.path_model is not None else False
-    path_video = options.path_video if options.path_video is not None else False
-
-    return (path_model,
-      path_video,
+    path_data = options.path_data if options.path_data is not None else False
+    pred_data_from = options.pred_data_from if options.pred_data_from is not None else "video"
+    
+    return (pred_data_from,
+      path_model,
+      path_data,
       int(num_classes),
       epochs, 
       batch_size, 
@@ -194,6 +198,28 @@ def predict(sess, image, image_pl, keep_prob, logits, image_shape):
     street_im.paste(mask, box=None, mask=mask)
     
     return street_im
+
+def read_zed(sess, image_shape, logits, keep_prob, input_image):
+    count = 0
+    video_zed = VideoZed(sess, image_shape, logits, keep_prob, input_image).start()
+
+    while len(video_zed.frame) == 0:
+      if count == 3:
+        exit("Error to open ZED")
+      print("Waiting for zed")
+      count+=1
+      time.sleep(1)
+      
+    video_shower = VideoShow(video_zed.frame).start()
+
+    while True:
+        if video_zed.stopped or video_shower.stopped:
+            video_shower.stop()
+            video_zed.stop()
+            break
+
+        frame = video_zed.frame
+        video_shower.frame = frame
 
 def predict_video(data_dir, sess, image_shape, logits, keep_prob, input_image):
     print('Predicting Video...')

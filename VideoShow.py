@@ -15,7 +15,10 @@ class VideoShow:
         return self
 
     def show(self):
+        #dim = (2560, 720)
+        # dim = (1280, 720)
         while not self.stopped:
+            # self.frame = cv2.resize(self.frame, dim, interpolation = cv2.INTER_AREA)
             cv2.imshow("Video", self.frame)
             if cv2.waitKey(1) == ord("q"):
                 self.stopped = True

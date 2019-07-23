@@ -314,7 +314,9 @@ def predict_by_model():
     # Path to vgg model
     vgg_path = os.path.join('./data', 'vgg')
 
-    with tf.Session() as sess:
+    #IF EXCEED GPU MEMORY, USE THE CONFIG BELOW
+    useCPU = tf.ConfigProto(device_count={'GPU': 0})
+    with tf.Session(config=useCPU) as sess:
         # Predict the logits
         input_image, keep_prob, vgg_layer3_out, vgg_layer4_out, vgg_layer7_out = load_vgg(sess, vgg_path)
         nn_last_layer = layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes)
@@ -324,10 +326,10 @@ def predict_by_model():
         saver = tf.train.Saver()
         saver.restore(sess, path_model)
         
-        if pred_video == 'True':
+        if pred_data_from == 'video':
             # Predict a video
             helper.predict_video(path_data, sess, image_shape, logits, keep_prob, input_image)
-        else:
+        elif pred_data_from == 'image':
             # Predict a image
             image = scipy.misc.imresize(scipy.misc.imread(path_data), image_shape)
             street_im = helper.predict(sess, image, input_image, keep_prob, logits, image_shape)
@@ -337,9 +339,11 @@ def predict_by_model():
             
             scipy.misc.imsave(imagePath, street_im)
             print("Image save in {}".format(imagePath))
+        elif pred_data_from == 'zed':
+            helper.read_zed(sess, image_shape, logits, keep_prob, input_image)
 
 if __name__ == '__main__':
-    (pred_video,
+    (pred_data_from,
      path_model,
      path_data,
      num_classes,
