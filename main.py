@@ -6,6 +6,7 @@ import tests as tests
 import scipy.misc
 
 import progressbar
+from termcolor import colored
 from tensorflow.python.util import compat
 from distutils.version import LooseVersion
 from tensorflow.python.platform import gfile
@@ -267,8 +268,7 @@ def run():
 
         pathSaveModel = os.path.join(folderToSaveModel, "model.ckpt")
         pathSaveModel = saver.save(sess, pathSaveModel)
-        print("Model saved in path: {}".format(pathSaveModel))
-        
+        print(colored("Model saved in path: {}".format(pathSaveModel), 'green'))
         helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
 
         # OPTIONAL: Apply the trained model to a video
@@ -298,7 +298,7 @@ def all_is_ok():
     tests.test_train_nn(train_nn)
 
 def predict_by_model():
-    if path_data is False:
+    if path_data is False and pred_data_from != 'zed':
         exit("Path video not set, pass the properly argument")
 
     """
@@ -315,8 +315,12 @@ def predict_by_model():
     vgg_path = os.path.join('./data', 'vgg')
 
     #IF EXCEED GPU MEMORY, USE THE CONFIG BELOW
-    useCPU = tf.ConfigProto(device_count={'GPU': 0})
-    with tf.Session(config=useCPU) as sess:
+    if disable_gpu:
+        tf_config = tf.ConfigProto(device_count={'GPU': 0})
+    else:
+        tf_config = tf.ConfigProto()
+    
+    with tf.Session(config=tf_config) as sess:
         # Predict the logits
         input_image, keep_prob, vgg_layer3_out, vgg_layer4_out, vgg_layer7_out = load_vgg(sess, vgg_path)
         nn_last_layer = layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes)
@@ -338,12 +342,14 @@ def predict_by_model():
             imagePath = os.path.join(current_dir, "image_predicted.png")
             
             scipy.misc.imsave(imagePath, street_im)
-            print("Image save in {}".format(imagePath))
+
+            print(colored("Image save in {}".format(imagePath), 'green'))
         elif pred_data_from == 'zed':
             helper.read_zed(sess, image_shape, logits, keep_prob, input_image)
 
 if __name__ == '__main__':
-    (pred_data_from,
+    (disable_gpu,
+     pred_data_from,
      path_model,
      path_data,
      num_classes,

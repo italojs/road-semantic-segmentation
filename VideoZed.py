@@ -1,7 +1,8 @@
-from threading import Thread
 import cv2
 import helper
 import pyzed.sl as sl
+import numpy as np
+from threading import Thread
 
 class VideoZed:
     """
@@ -9,7 +10,7 @@ class VideoZed:
     """
 
     def __init__(self, sess, image_shape, logits, keep_prob, input_image):
-        self.frame = []
+        self.frame = None
         self.stopped = False
         self.sess = sess
         self.image_shape = image_shape
@@ -42,12 +43,14 @@ class VideoZed:
                 cam.retrieve_image(mat, sl.VIEW.VIEW_LEFT)
                 frameLocal = cv2.resize(mat.get_data(), (self.image_shape[1], self.image_shape[0]))
                 
-                self.frame = helper.predict(self.sess, frameLocal,
+                # Transform a PNG frame to JPG, removing the last dimension.
+                frameLocal = frameLocal[:,:,0:3]
+                
+                self.frame = np.array(helper.predict(self.sess, frameLocal,
                                                      self.input_image,
                                                      self.keep_prob,
                                                      self.logits,
-                                                     self.image_shape)
-                # cv2.imshow("ZED", mat.get_data())
+                                                     self.image_shape))
 
     def stop(self):
         self.stopped = True
