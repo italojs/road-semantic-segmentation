@@ -46,9 +46,9 @@ The project will download the [Kitti Road dataset](http://www.cvlibs.net/dataset
 
 #### Add a custom Dataset
 Add images in data/data_road/training/
-Example: 
- gt_image_2/um_lane_000000.png
- image_2/um_000000.png
+##### Example: 
+ - gt_image_2/um_lane_000000.png
+ - image_2/um_000000.png
 
 ##### **Obs: The images in qt_image_2 are not a image with 4 channels (png file), are a jpg.**
 .
