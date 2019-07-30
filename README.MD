@@ -9,7 +9,6 @@ Semantic Segmentation - It label the pixels of a road in images using a Fully Co
     - [Frameworks and Packages](#Frameworks-and-Packages)
     - [Dataset](#Dataset)
     - [Add a custom Dataset](#Add-a-custom-Dataset)
-- [Facens Model](#Facens-Model)
 - [Start](#Start)
     - [Usage](#Usage)
     - [google colabotory - GPU 4free](#Running-at-google-colabotory---GPU-4free)
@@ -51,10 +50,6 @@ Add images in data/data_road/training/
  - image_2/um_000000.png
 
 ##### **Obs: The images in qt_image_2 are not a image with 4 channels (png file), are a jpg.**
-.
-#### Facens Model
-To get Facens dataset for [labmovel project](https://github.com/huberemanuel/labmovel/tree/dev), click [here](https://drive.google.com/file/d/1bfSr2wo3YD6ANtCpeSnru0pxngsiFKGn/view?usp=sharing)
-
 
 ## Start
 
